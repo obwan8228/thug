@@ -2444,7 +2444,7 @@ local Library do
                 BackgroundColor3 = FromRGB(15, 15, 20)
             })  Items["MainFrame"]:AddToTheme({BackgroundColor3 = "Background", BorderColor3 = "Border"})
 
-            Items["MainFrame"].Instance.Position = UDim2New(0.5, -Window.Size.X.Offset / 2, 0.5, -Window.Size.Y.Offset / 2)
+            Items["MainFrame"].Instance.Position = UDim2New(0, (Camera.ViewportSize.X - Window.Size.X.Offset) / 2, 0, (Camera.ViewportSize.Y - Window.Size.Y.Offset) / 2)
 
             Items["MainFrame"]:MakeDraggable()
             Items["MainFrame"]:MakeResizeable(Vector2New(Window.Size.X.Offset, Window.Size.Y.Offset), Vector2New(9999, 9999))
