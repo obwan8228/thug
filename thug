@@ -2444,7 +2444,7 @@ local Library do
                 BackgroundColor3 = FromRGB(15, 15, 20)
             })  Items["MainFrame"]:AddToTheme({BackgroundColor3 = "Background", BorderColor3 = "Border"})
 
-            Items["MainFrame"].Instance.Position = UDim2New(0, Camera.ViewportSize.X / (IsMobile and 1.4 or 2) - Window.Size.X.Offset / 2, 0, Camera.ViewportSize.Y / (IsMobile and 1.4 or 2) - Window.Size.Y.Offset / 2)
+            Items["MainFrame"].Instance.Position = UDim2New(0, Camera.ViewportSize.X / (IsMobile and 1.4 or 2) - Window.Size.X.Offset / 2, 0, Camera.ViewportSize.Y / (IsMobile and 1.4 or 2) - Window.Size.Y.Offset / 2 - 50)
 
             Items["MainFrame"]:MakeDraggable()
             Items["MainFrame"]:MakeResizeable(Vector2New(Window.Size.X.Offset, Window.Size.Y.Offset), Vector2New(9999, 9999))
@@ -2889,6 +2889,7 @@ local Library do
                 Items["Hide"].Instance.Visible = false
 
                 Items["Text"]:ChangeItemTheme({TextColor3 = "Text"})
+                Items["Page"].Instance.Visible = false
             end
 
             local Descendants = Items["Page"].Instance:GetDescendants()
@@ -3120,6 +3121,7 @@ local Library do
 
                 Items["Icon"]:ChangeItemTheme({ImageColor3 = "Text"})
                 Items["Inactive"].Instance.Size = UDim2New(1, 0, 1, -2)
+                Items["Subtab"].Instance.Visible = false
             end
 
             local Descendants = Items["Subtab"].Instance:GetDescendants()
@@ -3481,6 +3483,7 @@ local Library do
                     SubItems["Text"]:Tween(nil, {TextColor3 = Library.Theme.Text, TextTransparency = 0.5})
 
                     SubItems["Text"]:ChangeItemTheme({TextColor3 = "Text"})
+                    SubItems["Content"].Instance.Visible = false
                 end
 
                 local Descendants = SubItems["Content"].Instance:GetDescendants()
