@@ -3673,7 +3673,7 @@ local Library do
                 BackgroundTransparency = 1,
                 Name = "\0",
                 BorderColor3 = FromRGB(0, 0, 0),
-                Size = UDim2New(1, 0, 0, 18),
+                Size = UDim2New(1, 0, 0, 10),
                 BorderSizePixel = 0,
                 BackgroundColor3 = FromRGB(255, 255, 255)
             }) 
@@ -4063,7 +4063,7 @@ local Library do
                 BorderColor3 = FromRGB(10, 10, 10),
                 Text = "",
                 AutoButtonColor = false,
-                Size = UDim2New(1, 0, 0, 18),
+                Size = UDim2New(1, 0, 0, 10),
                 BorderSizePixel = 2,
                 BackgroundColor3 = FromRGB(33, 33, 36)
             })  Items["RealSlider"]:AddToTheme({BackgroundColor3 = "Background", BorderColor3 = "Border"})
