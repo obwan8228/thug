@@ -534,7 +534,7 @@ local Library do
                 local GuiSize = Gui.AbsoluteSize
         
                 NewX = MathClamp(NewX, math.min(0, ScreenSize.X - GuiSize.X), math.max(0, ScreenSize.X - GuiSize.X))
-                NewY = MathClamp(NewY, math.min(0, ScreenSize.Y - GuiSize.Y), math.max(0, ScreenSize.Y - GuiSize.Y))
+                NewY = GuiSize.Y > ScreenSize.Y and NewY or MathClamp(NewY, 0, math.max(0, ScreenSize.Y - GuiSize.Y))
         
                 self:Tween(TweenInfo.new(0.35, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {Position = UDim2New(0, NewX, 0, NewY)})
             end
