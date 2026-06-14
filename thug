@@ -196,18 +196,18 @@ local Library do
     Library = {
         Flags = { },
         
-        Theme = {
-            ["Background"] = FromHex("#14100f"),
-            ["Inline"] = FromHex("#191614"),
-            ["Page Background"] = FromHex("#28201e"),
-            ["Border"] = FromHex("#120f0e"),
-            ["Outline"] = FromHex("#211c1b"),
-            ["Accent"] = FromHex("#ffb29d"),
-            ["Element"] = FromHex("#242221"),
-            ["Hovered Element"] = FromHex("#322f2f"),
-            ["Text"] = FromHex("#979797"),
-            ["Text Border"] = FromRGB(0, 0, 0)
-        },
+            Theme = {
+                ["Background"] = FromRGB(15, 15, 20),
+                ["Inline"] = FromRGB(20, 20, 25),
+                ["Page Background"] = FromRGB(30, 30, 35),
+                ["Border"] = FromRGB(10, 10, 10),
+                ["Outline"] = FromRGB(27, 27, 32),
+                ["Accent"] = FromHex("#365578"),
+                ["Element"] = FromRGB(33, 33, 36),
+                ["Hovered Element"] = FromRGB(40, 40, 43),
+                ["Text"] = FromRGB(215, 215, 215),
+                ["Text Border"] = FromRGB(0, 0, 0)
+            },
 
         MenuKeybind = Enum.KeyCode.Z, 
 
