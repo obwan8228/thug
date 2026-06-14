@@ -196,18 +196,18 @@ local Library do
     Library = {
         Flags = { },
         
-            Theme = {
-                ["Background"] = FromRGB(15, 15, 20),
-                ["Inline"] = FromRGB(20, 20, 25),
-                ["Page Background"] = FromRGB(30, 30, 35),
-                ["Border"] = FromRGB(10, 10, 10),
-                ["Outline"] = FromRGB(27, 27, 32),
-                ["Accent"] = FromHex("#365578"),
-                ["Element"] = FromRGB(33, 33, 36),
-                ["Hovered Element"] = FromRGB(40, 40, 43),
-                ["Text"] = FromRGB(215, 215, 215),
-                ["Text Border"] = FromRGB(0, 0, 0)
-            },
+        Theme = {
+            ["Background"] = FromHex("#14100f"),
+            ["Inline"] = FromHex("#191614"),
+            ["Page Background"] = FromHex("#28201e"),
+            ["Border"] = FromHex("#120f0e"),
+            ["Outline"] = FromHex("#211c1b"),
+            ["Accent"] = FromHex("#ffb29d"),
+            ["Element"] = FromHex("#242221"),
+            ["Hovered Element"] = FromHex("#322f2f"),
+            ["Text"] = FromHex("#979797"),
+            ["Text Border"] = FromRGB(0, 0, 0)
+        },
 
         MenuKeybind = Enum.KeyCode.Z, 
 
@@ -2567,7 +2567,13 @@ local Library do
 
                 local Set = function(Input)
                     local DragDelta = Input.Position - DragStart
-                    Items["FloatingButton"]:Tween(TweenInfo.new(0.16, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {Position = UDim2New(StartPosition.X.Scale, StartPosition.X.Offset + DragDelta.X, StartPosition.Y.Scale, StartPosition.Y.Offset + DragDelta.Y)})
+                    local NewOffsetX = StartPosition.X.Offset + DragDelta.X
+                    local NewOffsetY = StartPosition.Y.Offset + DragDelta.Y
+                    local ParentSize = Gui.Parent.AbsoluteSize
+                    local GuiSize = Gui.AbsoluteSize
+                    NewOffsetX = MathClamp(NewOffsetX, GuiSize.X * 0.5 - ParentSize.X * 0.5, ParentSize.X * 0.5 - GuiSize.X * 0.5)
+                    NewOffsetY = MathClamp(NewOffsetY, 0, ParentSize.Y - GuiSize.Y)
+                    Items["FloatingButton"]:Tween(TweenInfo.new(0.16, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {Position = UDim2New(StartPosition.X.Scale, NewOffsetX, StartPosition.Y.Scale, NewOffsetY)})
                 end
 
                 Items["FloatingButton"]:Connect("InputBegan", function(Input)
@@ -2657,6 +2663,13 @@ local Library do
                 Debounce = false
                 Items["MainFrame"].Instance.Visible = Bool
             end)
+
+            if IsMobile and Items["FloatingButton"] then
+                local FloatingLabel = Items["FloatingButton"].Instance:FindFirstChildOfClass("TextLabel")
+                if FloatingLabel then
+                    FloatingLabel.Text = Bool and "Close" or "Open"
+                end
+            end
         end
 
         Library:Connect(UserInputService.InputBegan, function(Input)
