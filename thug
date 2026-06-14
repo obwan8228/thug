@@ -3673,7 +3673,7 @@ local Library do
                 BackgroundTransparency = 1,
                 Name = "\0",
                 BorderColor3 = FromRGB(0, 0, 0),
-                Size = UDim2New(1, 0, 0, 10),
+                Size = UDim2New(1, 0, 0, 30),
                 BorderSizePixel = 0,
                 BackgroundColor3 = FromRGB(255, 255, 255)
             }) 
@@ -4063,7 +4063,7 @@ local Library do
                 BorderColor3 = FromRGB(10, 10, 10),
                 Text = "",
                 AutoButtonColor = false,
-                Size = UDim2New(1, 0, 0, 10),
+                Size = UDim2New(1, 0, 0, 30),
                 BorderSizePixel = 2,
                 BackgroundColor3 = FromRGB(33, 33, 36)
             })  Items["RealSlider"]:AddToTheme({BackgroundColor3 = "Background", BorderColor3 = "Border"})
@@ -4165,10 +4165,11 @@ local Library do
             Items["Slider"].Instance.Visible = Bool
         end
 
-        Items["RealSlider"]:Connect("MouseButton1Down", function(Input)
+        Items["RealSlider"]:Connect("InputBegan", function(Input)
+            if Input.UserInputType ~= Enum.UserInputType.MouseButton1 and Input.UserInputType ~= Enum.UserInputType.Touch then return end
             Slider.Sliding = true
 
-            local MousePos = Input and Input.Position or UserInputService:GetMouseLocation()
+            local MousePos = Input.Position
 
             local SizeX = (MousePos.X - Items["RealSlider"].Instance.AbsolutePosition.X) / Items["RealSlider"].Instance.AbsoluteSize.X
             local Value = ((Slider.Max - Slider.Min) * SizeX) + Slider.Min
