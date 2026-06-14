@@ -2903,6 +2903,8 @@ local Library do
 
                 Items["Text"]:ChangeItemTheme({TextColor3 = "Text"})
                 Items["Page"].Instance.Visible = false
+                Debounce = false
+                return
             end
 
             local Descendants = Items["Page"].Instance:GetDescendants()
@@ -3135,6 +3137,8 @@ local Library do
                 Items["Icon"]:ChangeItemTheme({ImageColor3 = "Text"})
                 Items["Inactive"].Instance.Size = UDim2New(1, 0, 1, -2)
                 Items["Subtab"].Instance.Visible = false
+                Debounce = false
+                return
             end
 
             local Descendants = Items["Subtab"].Instance:GetDescendants()
@@ -3496,10 +3500,12 @@ local Library do
                     SubItems["Text"]:Tween(nil, {TextColor3 = Library.Theme.Text, TextTransparency = 0.5})
 
                     SubItems["Text"]:ChangeItemTheme({TextColor3 = "Text"})
-                    SubItems["Content"].Instance.Visible = false
-                end
+                SubItems["Content"].Instance.Visible = false
+                Debounce = false
+                return
+            end
 
-                local Descendants = SubItems["Content"].Instance:GetDescendants()
+            local Descendants = SubItems["Content"].Instance:GetDescendants()
                 TableInsert(Descendants, SubItems["Content"].Instance)
 
                 local NewTween
