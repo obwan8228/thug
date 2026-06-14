@@ -196,18 +196,18 @@ local Library do
     Library = {
         Flags = { },
         
-            Theme = {
-                ["Background"] = FromRGB(15, 15, 20),
-                ["Inline"] = FromRGB(20, 20, 25),
-                ["Page Background"] = FromRGB(30, 30, 35),
-                ["Border"] = FromRGB(10, 10, 10),
-                ["Outline"] = FromRGB(27, 27, 32),
-                ["Accent"] = FromHex("#365578"),
-                ["Element"] = FromRGB(33, 33, 36),
-                ["Hovered Element"] = FromRGB(40, 40, 43),
-                ["Text"] = FromRGB(215, 215, 215),
-                ["Text Border"] = FromRGB(0, 0, 0)
-            },
+        Theme = {
+            ["Background"] = FromRGB(15, 15, 20),
+            ["Inline"] = FromRGB(20, 20, 25),
+            ["Page Background"] = FromRGB(30, 30, 35),
+            ["Border"] = FromRGB(10, 10, 10),
+            ["Outline"] = FromRGB(27, 27, 32),
+            ["Accent"] = FromHex("#365578"),
+            ["Element"] = FromRGB(33, 33, 36),
+            ["Hovered Element"] = FromRGB(40, 40, 43),
+            ["Text"] = FromRGB(215, 215, 215),
+            ["Text Border"] = FromRGB(0, 0, 0)
+        },
 
         MenuKeybind = Enum.KeyCode.Z, 
 
@@ -4345,16 +4345,19 @@ local Library do
                 Name = "\0"
             }):AddToTheme({Color = "Text Border"})
             
-            Items["OptionHolder"] = Instances:Create("Frame", {
+            Items["OptionHolder"] = Instances:Create("ScrollingFrame", {
                 Parent = Items["Dropdown"].Instance,
                 Visible = false,
                 BorderColor3 = FromRGB(10, 10, 10),
                 Name = "\0",
                 Position = UDim2New(0, 0, 1, 5),
-                Size = UDim2New(1, 0, 0, 0),
+                Size = UDim2New(1, 0, 0, 150),
                 BorderSizePixel = 2,
-                AutomaticSize = Enum.AutomaticSize.Y,
-                BackgroundColor3 = FromRGB(20, 20, 25)
+                BackgroundColor3 = FromRGB(20, 20, 25),
+                ScrollBarThickness = 4,
+                ScrollingDirection = Enum.ScrollingDirection.Y,
+                ClipsDescendants = true,
+                AutomaticCanvasSize = Enum.AutomaticSize.Y,
             })  Items["OptionHolder"]:AddToTheme({BackgroundColor3 = "Inline", BorderColor3 = "Border"})
             
             Instances:Create("UIStroke", {
