@@ -214,7 +214,7 @@ local Library do
         Tween = {
             Time = 0.3,
             Style = Enum.EasingStyle.Exponential,
-            Direction = Enum.EasingDirection.InOut
+            Direction = Enum.EasingDirection.Out
         },
 
         Folders = {
@@ -1720,6 +1720,8 @@ local Library do
                 Debounce = true
                 local MyGen = OpenGen + 1
                 OpenGen = MyGen
+                Items["ColorpickerWindow"].Instance.Visible = true
+                Items["ColorpickerWindow"].Instance.Position = UDim2New(0, Data.Parent.Instance.AbsolutePosition.X, 0, Data.Parent.Instance.AbsolutePosition.Y + 15)
 
                 if Library.CurrentColorpicker and Library.CurrentColorpicker ~= Colorpicker then
                     Library.CurrentColorpicker:SetOpen(false)
@@ -1738,24 +1740,6 @@ local Library do
                         end
                     end
                 end
-
-                -- Pre-set all items to transparent before showing to prevent overlap flash
-                for _, FData in FadeCache do
-                    FData.Saved = {}
-                    local ValueIndex = FData.Properties
-                    if type(ValueIndex) == "table" then
-                        for _, Property in ValueIndex do
-                            FData.Saved[Property] = FData.Item[Property]
-                            FData.Item[Property] = 1
-                        end
-                    else
-                        FData.Saved[ValueIndex] = FData.Item[ValueIndex]
-                        FData.Item[ValueIndex] = 1
-                    end
-                end
-
-                Items["ColorpickerWindow"].Instance.Visible = true
-                Items["ColorpickerWindow"].Instance.Position = UDim2New(0, Data.Parent.Instance.AbsolutePosition.X, 0, Data.Parent.Instance.AbsolutePosition.Y + 15)
 
                 local Completed = 0
                 local Total = 0
@@ -1776,28 +1760,25 @@ local Library do
                         FData.Item.ZIndex = 10001
                     end
                     local ValueIndex = FData.Properties
-                    local Overrides = FData.Saved
                     if type(ValueIndex) == "table" then
                         for _, Property in ValueIndex do
-                            local Goal = {[Property] = Overrides[Property]}
-                            local twn = TweenService:Create(FData.Item, TweenInfo.new(Data.FadeSpeed, Library.Tween.Style, Library.Tween.Direction), Goal)
-                            twn:Play()
-                            twn.Completed:Once(OnComplete)
+                            local Twn = Library:FadeItem(FData.Item, Property, true, Data.FadeSpeed)
+                            if Twn and Twn.Tween then
+                                Twn.Tween.Completed:Once(OnComplete)
+                            end
                         end
                     else
-                        local Goal = {[ValueIndex] = Overrides[ValueIndex]}
-                        local twn = TweenService:Create(FData.Item, TweenInfo.new(Data.FadeSpeed, Library.Tween.Style, Library.Tween.Direction), Goal)
-                        twn:Play()
-                        twn.Completed:Once(OnComplete)
+                        local Twn = Library:FadeItem(FData.Item, ValueIndex, true, Data.FadeSpeed)
+                        if Twn and Twn.Tween then
+                            Twn.Tween.Completed:Once(OnComplete)
+                        end
                     end
                 end
             else
                 OpenGen = OpenGen + 1
+                Debounce = false
                 Library.CurrentColorpicker = nil
                 Items["ColorpickerWindow"].Instance.Visible = false
-                task.defer(function()
-                    Debounce = false
-                end)
             end
         end
 
@@ -2007,7 +1988,7 @@ local Library do
                     return
                 end
 
-                if Library:IsMouseOverFrame(Items["ColorpickerWindow"]) or Library:IsMouseOverFrame(Items["ColorpickerButton"]) then
+                if Library:IsMouseOverFrame(Items["ColorpickerWindow"]) then
                     return
                 end
 
@@ -2458,7 +2439,7 @@ local Library do
             SubPages = { },
             Elements = { },
 
-            IsOpen = false
+            IsOpen = true
         }
 
         local Items = { } do 
@@ -2470,8 +2451,7 @@ local Library do
                 BorderColor3 = FromRGB(10, 10, 10),
                 Size = Window.Size,
                 BorderSizePixel = 2,
-                BackgroundColor3 = FromRGB(15, 15, 20),
-                Visible = false
+                BackgroundColor3 = FromRGB(15, 15, 20)
             })  Items["MainFrame"]:AddToTheme({BackgroundColor3 = "Background", BorderColor3 = "Border"})
 
             Items["MainFrame"].Instance.Position = UDim2New(0, Camera.ViewportSize.X / (IsMobile and 1.4 or 2) - Window.Size.X.Offset / 2, 0, Camera.ViewportSize.Y / (IsMobile and 1.4 or 2) - Window.Size.Y.Offset / 2 - 50)
@@ -2669,6 +2649,7 @@ local Library do
                 Debounce = true
                 local MyGen = OpenGen + 1
                 OpenGen = MyGen
+                Items["MainFrame"].Instance.Visible = true
 
                 if not FadeCache then
                     FadeCache = {}
@@ -2681,23 +2662,6 @@ local Library do
                         end
                     end
                 end
-
-                -- Pre-set all to transparent before showing to prevent overlap flash
-                for _, Data in FadeCache do
-                    Data.Saved = {}
-                    local ValueIndex = Data.Properties
-                    if type(ValueIndex) == "table" then
-                        for _, Property in ValueIndex do
-                            Data.Saved[Property] = Data.Item[Property]
-                            Data.Item[Property] = 1
-                        end
-                    else
-                        Data.Saved[ValueIndex] = Data.Item[ValueIndex]
-                        Data.Item[ValueIndex] = 1
-                    end
-                end
-
-                Items["MainFrame"].Instance.Visible = true
 
                 local Completed = 0
                 local Total = 0
@@ -2713,7 +2677,6 @@ local Library do
                     end
                 end
 
-                local TweenInfoData = TweenInfo.new(Window.FadeSpeed, Library.Tween.Style, Library.Tween.Direction)
                 for BatchStart = 1, #FadeCache, 60 do
                     if BatchStart > 1 then
                         task.wait()
@@ -2721,19 +2684,18 @@ local Library do
                     for i = BatchStart, math.min(BatchStart + 59, #FadeCache) do
                         local Data = FadeCache[i]
                         local ValueIndex = Data.Properties
-                        local Overrides = Data.Saved
                         if type(ValueIndex) == "table" then
                             for _, Property in ValueIndex do
-                                local Goal = {[Property] = Overrides[Property]}
-                                local twn = TweenService:Create(Data.Item, TweenInfoData, Goal)
-                                twn:Play()
-                                twn.Completed:Once(OnComplete)
+                                local Twn = Library:FadeItem(Data.Item, Property, true, Window.FadeSpeed)
+                                if Twn and Twn.Tween then
+                                    Twn.Tween.Completed:Once(OnComplete)
+                                end
                             end
                         else
-                            local Goal = {[ValueIndex] = Overrides[ValueIndex]}
-                            local twn = TweenService:Create(Data.Item, TweenInfoData, Goal)
-                            twn:Play()
-                            twn.Completed:Once(OnComplete)
+                            local Twn = Library:FadeItem(Data.Item, ValueIndex, true, Window.FadeSpeed)
+                            if Twn and Twn.Tween then
+                                Twn.Tween.Completed:Once(OnComplete)
+                            end
                         end
                     end
                 end
@@ -2959,6 +2921,7 @@ local Library do
         end
 
         local Debounce = false
+        local FadeCache = nil
         local TurnGen = 0
 
         function Page:Turn(Bool)
@@ -2972,34 +2935,6 @@ local Library do
                 Debounce = true
                 local MyGen = TurnGen + 1
                 TurnGen = MyGen
-
-                local Descendants = Items["Page"].Instance:GetDescendants()
-                TableInsert(Descendants, Items["Page"].Instance)
-
-                -- Build fade list from current descendants (elements may have been added after first show)
-                local FadeItems = {}
-                for _, Value in Descendants do
-                    local ValueIndex = Library:GetTransparencyPropertyFromItem(Value)
-                    if ValueIndex then
-                        TableInsert(FadeItems, {Item = Value, Properties = ValueIndex})
-                    end
-                end
-
-                -- Pre-set all items to transparent before showing to prevent overlap flash
-                for _, Data in FadeItems do
-                    Data.Saved = {}
-                    local ValueIndex = Data.Properties
-                    if type(ValueIndex) == "table" then
-                        for _, Property in ValueIndex do
-                            Data.Saved[Property] = Data.Item[Property]
-                            Data.Item[Property] = 1
-                        end
-                    else
-                        Data.Saved[ValueIndex] = Data.Item[ValueIndex]
-                        Data.Item[ValueIndex] = 1
-                    end
-                end
-
                 Items["Page"].Instance.Visible = true
 
                 Items["Text"]:Tween(nil, {TextColor3 = Library.Theme.Accent, TextTransparency = 0})
@@ -3007,9 +2942,21 @@ local Library do
 
                 Items["Text"]:ChangeItemTheme({TextColor3 = "Accent"})
 
+                if not FadeCache then
+                    FadeCache = {}
+                    local Descendants = Items["Page"].Instance:GetDescendants()
+                    TableInsert(Descendants, Items["Page"].Instance)
+                    for _, Value in Descendants do
+                        local ValueIndex = Library:GetTransparencyPropertyFromItem(Value)
+                        if ValueIndex then
+                            TableInsert(FadeCache, {Item = Value, Properties = ValueIndex})
+                        end
+                    end
+                end
+
                 local Completed = 0
                 local Total = 0
-                for _, Data in FadeItems do
+                for _, Data in FadeCache do
                     Total = Total + (type(Data.Properties) == "table" and #Data.Properties or 1)
                 end
 
@@ -3021,27 +2968,25 @@ local Library do
                     end
                 end
 
-                local TweenInfoData = TweenInfo.new(Page.Window.FadeSpeed or 0.5, Library.Tween.Style, Library.Tween.Direction)
-                for BatchStart = 1, #FadeItems, 60 do
+                for BatchStart = 1, #FadeCache, 60 do
                     if BatchStart > 1 then
                         task.wait()
                     end
-                    for i = BatchStart, math.min(BatchStart + 59, #FadeItems) do
-                        local Data = FadeItems[i]
+                    for i = BatchStart, math.min(BatchStart + 59, #FadeCache) do
+                        local Data = FadeCache[i]
                         local ValueIndex = Data.Properties
-                        local Overrides = Data.Saved
                         if type(ValueIndex) == "table" then
                             for _, Property in ValueIndex do
-                                local Goal = {[Property] = Overrides[Property]}
-                                local twn = TweenService:Create(Data.Item, TweenInfoData, Goal)
-                                twn:Play()
-                                twn.Completed:Once(OnComplete)
+                                local Twn = Library:FadeItem(Data.Item, Property, true, Page.Window.FadeSpeed or 0.5)
+                                if Twn and Twn.Tween then
+                                    Twn.Tween.Completed:Once(OnComplete)
+                                end
                             end
                         else
-                            local Goal = {[ValueIndex] = Overrides[ValueIndex]}
-                            local twn = TweenService:Create(Data.Item, TweenInfoData, Goal)
-                            twn:Play()
-                            twn.Completed:Once(OnComplete)
+                            local Twn = Library:FadeItem(Data.Item, ValueIndex, true, Page.Window.FadeSpeed or 0.5)
+                            if Twn and Twn.Tween then
+                                Twn.Tween.Completed:Once(OnComplete)
+                            end
                         end
                     end
                 end
@@ -3058,11 +3003,8 @@ local Library do
 
         Items["Inactive"]:Connect("MouseButton1Down", function()
             for Index, Value in Page.Window.Pages do
-                if Value ~= Page then
-                    Value:Turn(false)
-                end
+                Value:Turn(Value == Page)
             end
-            Page:Turn(true)
         end)
 
         if #Page.Window.Pages == 0 then 
@@ -3237,6 +3179,7 @@ local Library do
         end
 
         local Debounce = false
+        local FadeCache = nil
         local TurnGen = 0
 
         function SubPage:Turn(Bool)
@@ -3250,33 +3193,6 @@ local Library do
                 Debounce = true
                 local MyGen = TurnGen + 1
                 TurnGen = MyGen
-
-                local Descendants = Items["Subtab"].Instance:GetDescendants()
-                TableInsert(Descendants, Items["Subtab"].Instance)
-
-                local FadeItems = {}
-                for _, Value in Descendants do
-                    local ValueIndex = Library:GetTransparencyPropertyFromItem(Value)
-                    if ValueIndex then
-                        TableInsert(FadeItems, {Item = Value, Properties = ValueIndex})
-                    end
-                end
-
-                -- Pre-set all items to transparent before showing to prevent overlap flash
-                for _, Data in FadeItems do
-                    Data.Saved = {}
-                    local ValueIndex = Data.Properties
-                    if type(ValueIndex) == "table" then
-                        for _, Property in ValueIndex do
-                            Data.Saved[Property] = Data.Item[Property]
-                            Data.Item[Property] = 1
-                        end
-                    else
-                        Data.Saved[ValueIndex] = Data.Item[ValueIndex]
-                        Data.Item[ValueIndex] = 1
-                    end
-                end
-
                 Items["Subtab"].Instance.Visible = true
 
                 Items["Icon"]:Tween(nil, {ImageColor3 = Library.Theme.Accent, ImageTransparency = 0})
@@ -3286,9 +3202,21 @@ local Library do
 
                 Items["Inactive"].Instance.Size = UDim2New(1, 0, 1, 1)
 
+                if not FadeCache then
+                    FadeCache = {}
+                    local Descendants = Items["Subtab"].Instance:GetDescendants()
+                    TableInsert(Descendants, Items["Subtab"].Instance)
+                    for _, Value in Descendants do
+                        local ValueIndex = Library:GetTransparencyPropertyFromItem(Value)
+                        if ValueIndex then
+                            TableInsert(FadeCache, {Item = Value, Properties = ValueIndex})
+                        end
+                    end
+                end
+
                 local Completed = 0
                 local Total = 0
-                for _, Data in FadeItems do
+                for _, Data in FadeCache do
                     Total = Total + (type(Data.Properties) == "table" and #Data.Properties or 1)
                 end
 
@@ -3300,27 +3228,25 @@ local Library do
                     end
                 end
 
-                local TweenInfoData = TweenInfo.new(SubPage.Window.FadeSpeed or 0.5, Library.Tween.Style, Library.Tween.Direction)
-                for BatchStart = 1, #FadeItems, 60 do
+                for BatchStart = 1, #FadeCache, 60 do
                     if BatchStart > 1 then
                         task.wait()
                     end
-                    for i = BatchStart, math.min(BatchStart + 59, #FadeItems) do
-                        local Data = FadeItems[i]
+                    for i = BatchStart, math.min(BatchStart + 59, #FadeCache) do
+                        local Data = FadeCache[i]
                         local ValueIndex = Data.Properties
-                        local Overrides = Data.Saved
                         if type(ValueIndex) == "table" then
                             for _, Property in ValueIndex do
-                                local Goal = {[Property] = Overrides[Property]}
-                                local twn = TweenService:Create(Data.Item, TweenInfoData, Goal)
-                                twn:Play()
-                                twn.Completed:Once(OnComplete)
+                                local Twn = Library:FadeItem(Data.Item, Property, true, SubPage.Window.FadeSpeed or 0.5)
+                                if Twn and Twn.Tween then
+                                    Twn.Tween.Completed:Once(OnComplete)
+                                end
                             end
                         else
-                            local Goal = {[ValueIndex] = Overrides[ValueIndex]}
-                            local twn = TweenService:Create(Data.Item, TweenInfoData, Goal)
-                            twn:Play()
-                            twn.Completed:Once(OnComplete)
+                            local Twn = Library:FadeItem(Data.Item, ValueIndex, true, SubPage.Window.FadeSpeed or 0.5)
+                            if Twn and Twn.Tween then
+                                Twn.Tween.Completed:Once(OnComplete)
+                            end
                         end
                     end
                 end
@@ -3338,11 +3264,8 @@ local Library do
 
         Items["Inactive"]:Connect("MouseButton1Down", function()
             for Index, Value in SubPage.Window.SubPages do
-                if Value ~= SubPage then
-                    Value:Turn(false)
-                end
+                Value:Turn(Value == SubPage)
             end
-            SubPage:Turn(true)
         end)
 
         if #SubPage.Window.SubPages == 0 then 
@@ -3652,6 +3575,7 @@ local Library do
             end
 
             local Debounce = false
+            local FadeCache = nil
             local TurnGen = 0
 
             function NewSection:Turn(Bool)
@@ -3665,42 +3589,27 @@ local Library do
                     Debounce = true
                     local MyGen = TurnGen + 1
                     TurnGen = MyGen
-
-                    local Descendants = SubItems["Content"].Instance:GetDescendants()
-                    TableInsert(Descendants, SubItems["Content"].Instance)
-
-                    local FadeItems = {}
-                    for _, Value in Descendants do
-                        local ValueIndex = Library:GetTransparencyPropertyFromItem(Value)
-                        if ValueIndex then
-                            TableInsert(FadeItems, {Item = Value, Properties = ValueIndex})
-                        end
-                    end
-
-                    -- Pre-set all items to transparent before showing to prevent overlap flash
-                    for _, Data in FadeItems do
-                        Data.Saved = {}
-                        local ValueIndex = Data.Properties
-                        if type(ValueIndex) == "table" then
-                            for _, Property in ValueIndex do
-                                Data.Saved[Property] = Data.Item[Property]
-                                Data.Item[Property] = 1
-                            end
-                        else
-                            Data.Saved[ValueIndex] = Data.Item[ValueIndex]
-                            Data.Item[ValueIndex] = 1
-                        end
-                    end
-
                     SubItems["Content"].Instance.Visible = true
 
                     SubItems["Text"]:Tween(nil, {TextColor3 = Library.Theme.Accent, TextTransparency = 0})
 
                     SubItems["Text"]:ChangeItemTheme({TextColor3 = "Accent"})
 
+                    if not FadeCache then
+                        FadeCache = {}
+                        local Descendants = SubItems["Content"].Instance:GetDescendants()
+                        TableInsert(Descendants, SubItems["Content"].Instance)
+                        for _, Value in Descendants do
+                            local ValueIndex = Library:GetTransparencyPropertyFromItem(Value)
+                            if ValueIndex then
+                                TableInsert(FadeCache, {Item = Value, Properties = ValueIndex})
+                            end
+                        end
+                    end
+
                     local Completed = 0
                     local Total = 0
-                    for _, Data in FadeItems do
+                    for _, Data in FadeCache do
                         Total = Total + (type(Data.Properties) == "table" and #Data.Properties or 1)
                     end
 
@@ -3712,27 +3621,25 @@ local Library do
                         end
                     end
 
-                    local TweenInfoData = TweenInfo.new(MultiSection.Window.FadeSpeed or 0.5, Library.Tween.Style, Library.Tween.Direction)
-                    for BatchStart = 1, #FadeItems, 60 do
+                    for BatchStart = 1, #FadeCache, 60 do
                         if BatchStart > 1 then
                             task.wait()
                         end
-                        for i = BatchStart, math.min(BatchStart + 59, #FadeItems) do
-                            local Data = FadeItems[i]
+                        for i = BatchStart, math.min(BatchStart + 59, #FadeCache) do
+                            local Data = FadeCache[i]
                             local ValueIndex = Data.Properties
-                            local Overrides = Data.Saved
                             if type(ValueIndex) == "table" then
                                 for _, Property in ValueIndex do
-                                    local Goal = {[Property] = Overrides[Property]}
-                                    local twn = TweenService:Create(Data.Item, TweenInfoData, Goal)
-                                    twn:Play()
-                                    twn.Completed:Once(OnComplete)
+                                    local Twn = Library:FadeItem(Data.Item, Property, true, MultiSection.Window.FadeSpeed or 0.5)
+                                    if Twn and Twn.Tween then
+                                        Twn.Tween.Completed:Once(OnComplete)
+                                    end
                                 end
                             else
-                                local Goal = {[ValueIndex] = Overrides[ValueIndex]}
-                                local twn = TweenService:Create(Data.Item, TweenInfoData, Goal)
-                                twn:Play()
-                                twn.Completed:Once(OnComplete)
+                                local Twn = Library:FadeItem(Data.Item, ValueIndex, true, MultiSection.Window.FadeSpeed or 0.5)
+                                if Twn and Twn.Tween then
+                                    Twn.Tween.Completed:Once(OnComplete)
+                                end
                             end
                         end
                     end
@@ -3748,11 +3655,8 @@ local Library do
 
             SubItems["Inactive"]:Connect("MouseButton1Down", function()
                 for Index, Value in MultiSection.SectionContents do
-                    if Value ~= NewSection then
-                        Value:Turn(false)
-                    end
+                    Value:Turn(Value == NewSection)
                 end
-                NewSection:Turn(true)
             end)
 
             if #MultiSection.SectionContents == 0 then 
@@ -4811,27 +4715,13 @@ local Library do
             if Bool then 
                 if Debounce then return end
                 Debounce = true
-
-                local Descendants = Items["OptionHolder"].Instance:GetDescendants()
-                TableInsert(Descendants, Items["OptionHolder"].Instance)
-
-                -- Pre-set all items to transparent before showing to prevent overlap flash
-                for _, Value in Descendants do
-                    local ValueIndex = Library:GetTransparencyPropertyFromItem(Value)
-                    if not ValueIndex then continue end
-                    if type(ValueIndex) == "table" then
-                        for _, Property in ValueIndex do
-                            Value[Property] = 1
-                        end
-                    else
-                        Value[ValueIndex] = 1
-                    end
-                end
-
                 Items["OptionHolder"].Instance.Visible = true
                 Items["OptionHolder"].Instance.ZIndex = 15
                 Items["Open"].Instance.Text = "-"
                 Items["Open"].Instance.Position = UDim2New(0, -5, 0, -1)
+
+                local Descendants = Items["OptionHolder"].Instance:GetDescendants()
+                TableInsert(Descendants, Items["OptionHolder"].Instance)
 
                 local Completed = 0
                 local Total = 0
@@ -4857,27 +4747,22 @@ local Library do
                         Value.ZIndex = 15
                     end
 
-                    local TweenInfoData = TweenInfo.new(Dropdown.Window.FadeSpeed, Library.Tween.Style, Library.Tween.Direction)
                     if type(ValueIndex) == "table" then
                         for _, Property in ValueIndex do
-                            local Goal = {[Property] = 0}
-                            local twn = TweenService:Create(Value, TweenInfoData, Goal)
-                            twn:Play()
-                            twn.Completed:Once(OnComplete)
+                            local Twn = Library:FadeItem(Value, Property, true, Dropdown.Window.FadeSpeed)
+                            if Twn and Twn.Tween then Twn.Tween.Completed:Once(OnComplete) end
                         end
                     else
-                        local Goal = {[ValueIndex] = 0}
-                        local twn = TweenService:Create(Value, TweenInfoData, Goal)
-                        twn:Play()
-                        twn.Completed:Once(OnComplete)
+                        local Twn = Library:FadeItem(Value, ValueIndex, true, Dropdown.Window.FadeSpeed)
+                        if Twn and Twn.Tween then Twn.Tween.Completed:Once(OnComplete) end
                     end
                 end
             else
+                Debounce = false
                 Items["Open"].Instance.Text = "+"
                 Items["Open"].Instance.Position = UDim2New(0, -4, 0, -1)
                 Items["OptionHolder"].Instance.Visible = false
                 Items["OptionHolder"].Instance.ZIndex = 1
-                Debounce = false
             end
         end
 
@@ -4895,7 +4780,7 @@ local Library do
                     return 
                 end
 
-                if Library:IsMouseOverFrame(Items["OptionHolder"]) or Library:IsMouseOverFrame(Items["Open"]) then
+                if Library:IsMouseOverFrame(Items["OptionHolder"]) then
                     return
                 end
 
@@ -5555,5 +5440,6 @@ local Library do
         end
     end
 end
+
 getgenv().Library = Library
 return Library
