@@ -214,7 +214,7 @@ local Library do
         Tween = {
             Time = 0.3,
             Style = Enum.EasingStyle.Exponential,
-            Direction = Enum.EasingDirection.InOut
+            Direction = Enum.EasingDirection.Out
         },
 
         Folders = {
@@ -835,9 +835,10 @@ local Library do
             [Property] = Visibility and OldTransparency or 1
         }, true)
 
-        NewTween.Tween.Completed:Once(function()
-            if not Visibility then
-                Item[Property] = 1
+        Library:Connect(NewTween.Tween.Completed, function()
+            if not Visibility then 
+                task.wait()
+                Item[Property] = OldTransparency
             end
         end)
 
@@ -1717,77 +1718,57 @@ local Library do
         local Debounce = false
 
         function Colorpicker:SetOpen(Bool)
-            if not Bool then
-                Colorpicker.IsOpen = false
+            if Debounce then 
+                return 
+            end
+
+            Colorpicker.IsOpen = Bool
+
+            Debounce = true 
+
+            if Bool then 
+                Items["ColorpickerWindow"].Instance.Visible = true
+                Items["ColorpickerWindow"].Instance.Position = UDim2New(0, Data.Parent.Instance.AbsolutePosition.X, 0, Data.Parent.Instance.AbsolutePosition.Y + 15)
+
+                if Library.CurrentColorpicker then
+                    Library.CurrentColorpicker:SetOpen(false)
+                    Library.CurrentColorpicker = nil 
+                end
+
+                if not Library.CurrentColorpicker then 
+                    Library.CurrentColorpicker = Colorpicker
+                end
+            else
                 Library.CurrentColorpicker = nil
-                Items["ColorpickerWindow"].Instance.Visible = false
-                return
             end
-
-            if Colorpicker.IsOpen then
-                return
-            end
-
-            Colorpicker.IsOpen = true
-
-            if Library.CurrentColorpicker then
-                Library.CurrentColorpicker:SetOpen(false)
-            end
-            Library.CurrentColorpicker = Colorpicker
-
-            Items["ColorpickerWindow"].Instance.Position = UDim2New(0, Data.Parent.Instance.AbsolutePosition.X, 0, Data.Parent.Instance.AbsolutePosition.Y + 15)
 
             local Descendants = Items["ColorpickerWindow"].Instance:GetDescendants()
             TableInsert(Descendants, Items["ColorpickerWindow"].Instance)
 
-            Colorpicker._OpenGen = (Colorpicker._OpenGen or 0) + 1
-            local MyGen = Colorpicker._OpenGen
-
-            local Batch = {}
-            local BatchIndex = 0
-            for Index, Value in Descendants do
+            local NewTween
+            for Index, Value in Descendants do 
                 local ValueIndex = Library:GetTransparencyPropertyFromItem(Value)
-                if not ValueIndex then
+
+                if not ValueIndex then 
                     continue
                 end
-                if not StringFind(Value.ClassName, "UI") then
-                    Value.ZIndex = 10001
+
+                if not StringFind(Value.ClassName, "UI") then 
+                    Value.ZIndex = Bool and 10001 or 1
                 end
+
                 if type(ValueIndex) == "table" then
-                    for _, Property in ValueIndex do
-                        BatchIndex = BatchIndex + 1
-                        local Old = Value[Property]
-                        Value[Property] = 1
-                        Batch[BatchIndex] = {Value, Property, Old}
+                    for _, Property in ValueIndex do 
+                        NewTween = Library:FadeItem(Value, Property, Bool, Data.FadeSpeed)
                     end
                 else
-                    BatchIndex = BatchIndex + 1
-                    local Old = Value[ValueIndex]
-                    Value[ValueIndex] = 1
-                    Batch[BatchIndex] = {Value, ValueIndex, Old}
+                    NewTween = Library:FadeItem(Value, ValueIndex, Bool, Data.FadeSpeed)
                 end
             end
 
-            Items["ColorpickerWindow"].Instance.Visible = true
-
-            local TweenInfoData = TweenInfo.new(Data.FadeSpeed, Library.Tween.Style, Library.Tween.Direction)
-            local LastTween
-
-            for i = 1, BatchIndex do
-                local Entry = Batch[i]
-                local Goal = {[Entry[2]] = Entry[3]}
-                local twn = Tween:Create(Entry[1], TweenInfoData, Goal, true)
-                twn:Play()
-                LastTween = twn
-                if i % 60 == 0 then
-                    task.wait()
-                end
-            end
-
-            LastTween.Tween.Completed:Once(function()
-                if MyGen ~= Colorpicker._OpenGen then
-                    return
-                end
+            Library:Connect(NewTween.Tween.Completed, function()
+                Debounce = false
+                Items["ColorpickerWindow"].Instance.Visible = Bool
             end)
         end
 
@@ -1998,10 +1979,6 @@ local Library do
                 end
 
                 if Library:IsMouseOverFrame(Items["ColorpickerWindow"]) then
-                    return
-                end
-
-                if Library:IsMouseOverFrame(Items["ColorpickerButton"]) then
                     return
                 end
 
@@ -2452,7 +2429,7 @@ local Library do
             SubPages = { },
             Elements = { },
 
-            IsOpen = false
+            IsOpen = true
         }
 
         local Items = { } do 
@@ -2464,8 +2441,7 @@ local Library do
                 BorderColor3 = FromRGB(10, 10, 10),
                 Size = Window.Size,
                 BorderSizePixel = 2,
-                BackgroundColor3 = FromRGB(15, 15, 20),
-                Visible = false
+                BackgroundColor3 = FromRGB(15, 15, 20)
             })  Items["MainFrame"]:AddToTheme({BackgroundColor3 = "Background", BorderColor3 = "Border"})
 
             Items["MainFrame"].Instance.Position = UDim2New(0, Camera.ViewportSize.X / (IsMobile and 1.4 or 2) - Window.Size.X.Offset / 2, 0, Camera.ViewportSize.Y / (IsMobile and 1.4 or 2) - Window.Size.Y.Offset / 2 - 50)
@@ -2651,82 +2627,47 @@ local Library do
         local Debounce = false
 
         function Window:SetOpen(Bool)
-            if not Bool then
-                Window.IsOpen = false
-                Items["MainFrame"].Instance.Visible = false
-                if IsMobile and Items["FloatingButton"] then
-                    local FloatingLabel = Items["FloatingButton"].Instance:FindFirstChildOfClass("TextLabel")
-                    if FloatingLabel then
-                        FloatingLabel.Text = "Open"
-                    end
-                end
-                return
+            if Debounce then 
+                return 
             end
 
-            if Window.IsOpen then
-                return
+            Window.IsOpen = Bool
+
+            Debounce = true 
+
+            if Bool then 
+                Items["MainFrame"].Instance.Visible = true
             end
 
-            Window.IsOpen = true
+            local Descendants = Items["MainFrame"].Instance:GetDescendants()
+            TableInsert(Descendants, Items["MainFrame"].Instance)
 
-            local Descendants = Window._FadeCache
-            if not Descendants then
-                Descendants = Items["MainFrame"].Instance:GetDescendants()
-                TableInsert(Descendants, Items["MainFrame"].Instance)
-                Window._FadeCache = Descendants
-            end
-
-            Window._OpenGen = (Window._OpenGen or 0) + 1
-            local MyGen = Window._OpenGen
-
-            local Batch = {}
-            local BatchIndex = 0
-            for Index, Value in Descendants do
+            local NewTween
+            for Index, Value in Descendants do 
                 local ValueIndex = Library:GetTransparencyPropertyFromItem(Value)
-                if not ValueIndex then
+
+                if not ValueIndex then 
                     continue
                 end
+
                 if type(ValueIndex) == "table" then
-                    for _, Property in ValueIndex do
-                        BatchIndex = BatchIndex + 1
-                        local Old = Value[Property]
-                        Value[Property] = 1
-                        Batch[BatchIndex] = {Value, Property, Old}
+                    for _, Property in ValueIndex do 
+                        NewTween = Library:FadeItem(Value, Property, Bool, Window.FadeSpeed)
                     end
                 else
-                    BatchIndex = BatchIndex + 1
-                    local Old = Value[ValueIndex]
-                    Value[ValueIndex] = 1
-                    Batch[BatchIndex] = {Value, ValueIndex, Old}
+                    NewTween = Library:FadeItem(Value, ValueIndex, Bool, Window.FadeSpeed)
                 end
             end
 
-            Items["MainFrame"].Instance.Visible = true
-
-            local LastTween
-            local TweenInfoData = TweenInfo.new(Window.FadeSpeed, Library.Tween.Style, Library.Tween.Direction)
-            for i = 1, BatchIndex do
-                local Entry = Batch[i]
-                local Goal = {[Entry[2]] = Entry[3]}
-                local twn = Tween:Create(Entry[1], TweenInfoData, Goal, true)
-                twn:Play()
-                LastTween = twn
-
-                if i % 60 == 0 then
-                    task.wait()
-                end
-            end
-
-            LastTween.Tween.Completed:Once(function()
-                if MyGen ~= Window._OpenGen then
-                    return
-                end
+            Library:Connect(NewTween.Tween.Completed, function()
+                Debounce = false
+                Items["MainFrame"].Instance.Visible = Bool
             end)
 
             if IsMobile and Items["FloatingButton"] then
                 local FloatingLabel = Items["FloatingButton"].Instance:FindFirstChildOfClass("TextLabel")
                 if FloatingLabel then
-                    FloatingLabel.Text = "Close"
+                    FloatingLabel.Text = Bool and "Close" or "Open"
                 end
             end
         end
@@ -2941,77 +2882,61 @@ local Library do
         local Debounce = false
 
         function Page:Turn(Bool)
-            if not Bool then
-                Page.Active = false
-                Items["Page"].Instance.Visible = false
+            if Debounce then 
+                return 
+            end
+
+            Page.Active = Bool
+
+            Debounce = true 
+
+            if Bool then 
+                Items["Page"].Instance.Visible = true
+
+                Items["Text"]:Tween(nil, {TextColor3 = Library.Theme.Accent, TextTransparency = 0})
+                Items["Hide"].Instance.Visible = true
+
+                Items["Text"]:ChangeItemTheme({TextColor3 = "Accent"})
+            else
                 Items["Text"]:Tween(nil, {TextColor3 = Library.Theme.Text, TextTransparency = 0.5})
                 Items["Hide"].Instance.Visible = false
+
                 Items["Text"]:ChangeItemTheme({TextColor3 = "Text"})
+                Items["Page"].Instance.Visible = false
+                Debounce = false
                 return
             end
-
-            if Page.Active then
-                return
-            end
-
-            Page.Active = true
 
             local Descendants = Items["Page"].Instance:GetDescendants()
             TableInsert(Descendants, Items["Page"].Instance)
 
-            local Batch = {}
-            local BatchIndex = 0
-            for Index, Value in Descendants do
+            local NewTween
+            for Index, Value in Descendants do 
                 local ValueIndex = Library:GetTransparencyPropertyFromItem(Value)
-                if not ValueIndex then
+
+                if not ValueIndex then 
                     continue
                 end
+
                 if type(ValueIndex) == "table" then
-                    for _, Property in ValueIndex do
-                        BatchIndex = BatchIndex + 1
-                        local Old = Value[Property]
-                        Value[Property] = 1
-                        Batch[BatchIndex] = {Value, Property, Old}
+                    for _, Property in ValueIndex do 
+                        NewTween = Library:FadeItem(Value, Property, Bool, Page.Window.FadeSpeed or 0.5)
                     end
                 else
-                    BatchIndex = BatchIndex + 1
-                    local Old = Value[ValueIndex]
-                    Value[ValueIndex] = 1
-                    Batch[BatchIndex] = {Value, ValueIndex, Old}
+                    NewTween = Library:FadeItem(Value, ValueIndex, Bool, Page.Window.FadeSpeed or 0.5)
                 end
             end
 
-            Items["Page"].Instance.Visible = true
-
-            local TweenInfoData = TweenInfo.new(Page.Window.FadeSpeed or 0.5, Library.Tween.Style, Library.Tween.Direction)
-            local LastTween
-
-            for i = 1, BatchIndex do
-                local Entry = Batch[i]
-                local Goal = {[Entry[2]] = Entry[3]}
-                local twn = Tween:Create(Entry[1], TweenInfoData, Goal, true)
-                twn:Play()
-                LastTween = twn
-                if i % 60 == 0 then
-                    task.wait()
-                end
-            end
-
-            LastTween.Tween.Completed:Once(function()
+            Library:Connect(NewTween.Tween.Completed, function()
+                Debounce = false
+                Items["Page"].Instance.Visible = Bool
             end)
-
-            Items["Text"]:Tween(nil, {TextColor3 = Library.Theme.Accent, TextTransparency = 0})
-            Items["Hide"].Instance.Visible = true
-            Items["Text"]:ChangeItemTheme({TextColor3 = "Accent"})
         end
 
         Items["Inactive"]:Connect("MouseButton1Down", function()
             for Index, Value in Page.Window.Pages do
-                if Value ~= Page then
-                    Value:Turn(false)
-                end
+                Value:Turn(Value == Page)
             end
-            Page:Turn(true)
         end)
 
         if #Page.Window.Pages == 0 then 
@@ -3185,80 +3110,67 @@ local Library do
             end
         end
 
+        local Debounce = false
+
         function SubPage:Turn(Bool)
-            if not Bool then
-                SubPage.Active = false
-                Items["Subtab"].Instance.Visible = false
+            if Debounce then 
+                return 
+            end
+
+            SubPage.Active = Bool
+
+            Debounce = true 
+
+            if Bool then 
+                Items["Subtab"].Instance.Visible = true
+
+                Items["Icon"]:Tween(nil, {ImageColor3 = Library.Theme.Accent, ImageTransparency = 0})
+                Items["Hide"].Instance.Visible = true
+
+                Items["Icon"]:ChangeItemTheme({ImageColor3 = "Accent"})
+
+                Items["Inactive"].Instance.Size = UDim2New(1, 0, 1, 1)
+            else
                 Items["Icon"]:Tween(nil, {ImageColor3 = Library.Theme.Text, ImageTransparency = 0.35})
                 Items["Hide"].Instance.Visible = false
+
                 Items["Icon"]:ChangeItemTheme({ImageColor3 = "Text"})
                 Items["Inactive"].Instance.Size = UDim2New(1, 0, 1, -2)
+                Items["Subtab"].Instance.Visible = false
+                Debounce = false
                 return
             end
-
-            if SubPage.Active then
-                return
-            end
-
-            SubPage.Active = true
 
             local Descendants = Items["Subtab"].Instance:GetDescendants()
             TableInsert(Descendants, Items["Subtab"].Instance)
 
-            local Batch = {}
-            local BatchIndex = 0
-            for Index, Value in Descendants do
+            local NewTween
+            for Index, Value in Descendants do 
                 local ValueIndex = Library:GetTransparencyPropertyFromItem(Value)
-                if not ValueIndex then
+
+                if not ValueIndex then 
                     continue
                 end
+
                 if type(ValueIndex) == "table" then
-                    for _, Property in ValueIndex do
-                        BatchIndex = BatchIndex + 1
-                        local Old = Value[Property]
-                        Value[Property] = 1
-                        Batch[BatchIndex] = {Value, Property, Old}
+                    for _, Property in ValueIndex do 
+                        NewTween = Library:FadeItem(Value, Property, Bool, SubPage.Window.FadeSpeed or 0.5)
                     end
                 else
-                    BatchIndex = BatchIndex + 1
-                    local Old = Value[ValueIndex]
-                    Value[ValueIndex] = 1
-                    Batch[BatchIndex] = {Value, ValueIndex, Old}
+                    NewTween = Library:FadeItem(Value, ValueIndex, Bool, SubPage.Window.FadeSpeed or 0.5)
                 end
             end
 
-            Items["Subtab"].Instance.Visible = true
-
-            local TweenInfoData = TweenInfo.new(SubPage.Window.FadeSpeed or 0.5, Library.Tween.Style, Library.Tween.Direction)
-            local LastTween
-
-            for i = 1, BatchIndex do
-                local Entry = Batch[i]
-                local Goal = {[Entry[2]] = Entry[3]}
-                local twn = Tween:Create(Entry[1], TweenInfoData, Goal, true)
-                twn:Play()
-                LastTween = twn
-                if i % 60 == 0 then
-                    task.wait()
-                end
-            end
-
-            LastTween.Tween.Completed:Once(function()
+            Library:Connect(NewTween.Tween.Completed, function()
+                Debounce = false
+                Items["Subtab"].Instance.Visible = Bool
             end)
-
-            Items["Icon"]:Tween(nil, {ImageColor3 = Library.Theme.Accent, ImageTransparency = 0})
-            Items["Hide"].Instance.Visible = true
-            Items["Icon"]:ChangeItemTheme({ImageColor3 = "Accent"})
-            Items["Inactive"].Instance.Size = UDim2New(1, 0, 1, 1)
         end
 
         Items["Inactive"]:Connect("MouseButton1Down", function()
             for Index, Value in SubPage.Window.SubPages do
-                if Value ~= SubPage then
-                    Value:Turn(false)
-                end
+                Value:Turn(Value == SubPage)
             end
-            SubPage:Turn(true)
         end)
 
         if #SubPage.Window.SubPages == 0 then 
@@ -3567,76 +3479,62 @@ local Library do
                 }) 
             end
 
+            local Debounce = false
+
             function NewSection:Turn(Bool)
-                if not Bool then
-                    NewSection.Active = false
-                    SubItems["Content"].Instance.Visible = false
+                if Debounce then 
+                    return 
+                end
+
+                NewSection.Active = Bool
+
+                Debounce = true 
+
+                if Bool then 
+                    SubItems["Content"].Instance.Visible = true
+
+                    SubItems["Text"]:Tween(nil, {TextColor3 = Library.Theme.Accent, TextTransparency = 0})
+
+                    SubItems["Text"]:ChangeItemTheme({TextColor3 = "Accent"})
+                else
                     SubItems["Text"]:Tween(nil, {TextColor3 = Library.Theme.Text, TextTransparency = 0.5})
+
                     SubItems["Text"]:ChangeItemTheme({TextColor3 = "Text"})
-                    return
-                end
+                SubItems["Content"].Instance.Visible = false
+                Debounce = false
+                return
+            end
 
-                if NewSection.Active then
-                    return
-                end
-
-                NewSection.Active = true
-
-                local Descendants = SubItems["Content"].Instance:GetDescendants()
+            local Descendants = SubItems["Content"].Instance:GetDescendants()
                 TableInsert(Descendants, SubItems["Content"].Instance)
 
-                local Batch = {}
-                local BatchIndex = 0
-                for Index, Value in Descendants do
+                local NewTween
+                for Index, Value in Descendants do 
                     local ValueIndex = Library:GetTransparencyPropertyFromItem(Value)
-                    if not ValueIndex then
+
+                    if not ValueIndex then 
                         continue
                     end
+
                     if type(ValueIndex) == "table" then
-                        for _, Property in ValueIndex do
-                            BatchIndex = BatchIndex + 1
-                            local Old = Value[Property]
-                            Value[Property] = 1
-                            Batch[BatchIndex] = {Value, Property, Old}
+                        for _, Property in ValueIndex do 
+                            NewTween = Library:FadeItem(Value, Property, Bool, MultiSection.Window.FadeSpeed or 0.5)
                         end
                     else
-                        BatchIndex = BatchIndex + 1
-                        local Old = Value[ValueIndex]
-                        Value[ValueIndex] = 1
-                        Batch[BatchIndex] = {Value, ValueIndex, Old}
+                        NewTween = Library:FadeItem(Value, ValueIndex, Bool, MultiSection.Window.FadeSpeed or 0.5)
                     end
                 end
 
-                SubItems["Content"].Instance.Visible = true
-
-                local TweenInfoData = TweenInfo.new(MultiSection.Window.FadeSpeed or 0.5, Library.Tween.Style, Library.Tween.Direction)
-                local LastTween
-
-                for i = 1, BatchIndex do
-                    local Entry = Batch[i]
-                    local Goal = {[Entry[2]] = Entry[3]}
-                    local twn = Tween:Create(Entry[1], TweenInfoData, Goal, true)
-                    twn:Play()
-                    LastTween = twn
-                    if i % 60 == 0 then
-                        task.wait()
-                    end
-                end
-
-                LastTween.Tween.Completed:Once(function()
+                Library:Connect(NewTween.Tween.Completed, function()
+                    Debounce = false
+                    SubItems["Content"].Instance.Visible = Bool
                 end)
-
-                SubItems["Text"]:Tween(nil, {TextColor3 = Library.Theme.Accent, TextTransparency = 0})
-                SubItems["Text"]:ChangeItemTheme({TextColor3 = "Accent"})
             end
 
             SubItems["Inactive"]:Connect("MouseButton1Down", function()
                 for Index, Value in MultiSection.SectionContents do
-                    if Value ~= NewSection then
-                        Value:Turn(false)
-                    end
+                    Value:Turn(Value == NewSection)
                 end
-                NewSection:Turn(true)
             end)
 
             if #MultiSection.SectionContents == 0 then 
