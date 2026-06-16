@@ -1793,9 +1793,11 @@ local Library do
                 end
             else
                 OpenGen = OpenGen + 1
-                Debounce = false
                 Library.CurrentColorpicker = nil
                 Items["ColorpickerWindow"].Instance.Visible = false
+                task.defer(function()
+                    Debounce = false
+                end)
             end
         end
 
@@ -2956,7 +2958,6 @@ local Library do
         end
 
         local Debounce = false
-        local FadeCache = nil
         local TurnGen = 0
 
         function Page:Turn(Bool)
@@ -2971,20 +2972,20 @@ local Library do
                 local MyGen = TurnGen + 1
                 TurnGen = MyGen
 
-                if not FadeCache then
-                    FadeCache = {}
-                    local Descendants = Items["Page"].Instance:GetDescendants()
-                    TableInsert(Descendants, Items["Page"].Instance)
-                    for _, Value in Descendants do
-                        local ValueIndex = Library:GetTransparencyPropertyFromItem(Value)
-                        if ValueIndex then
-                            TableInsert(FadeCache, {Item = Value, Properties = ValueIndex})
-                        end
+                local Descendants = Items["Page"].Instance:GetDescendants()
+                TableInsert(Descendants, Items["Page"].Instance)
+
+                -- Build fade list from current descendants (elements may have been added after first show)
+                local FadeItems = {}
+                for _, Value in Descendants do
+                    local ValueIndex = Library:GetTransparencyPropertyFromItem(Value)
+                    if ValueIndex then
+                        TableInsert(FadeItems, {Item = Value, Properties = ValueIndex})
                     end
                 end
 
                 -- Pre-set all items to transparent before showing to prevent overlap flash
-                for _, Data in FadeCache do
+                for _, Data in FadeItems do
                     Data.Saved = {}
                     local ValueIndex = Data.Properties
                     if type(ValueIndex) == "table" then
@@ -3007,7 +3008,7 @@ local Library do
 
                 local Completed = 0
                 local Total = 0
-                for _, Data in FadeCache do
+                for _, Data in FadeItems do
                     Total = Total + (type(Data.Properties) == "table" and #Data.Properties or 1)
                 end
 
@@ -3020,12 +3021,12 @@ local Library do
                 end
 
                 local TweenInfoData = TweenInfo.new(Page.Window.FadeSpeed or 0.5, Library.Tween.Style, Library.Tween.Direction)
-                for BatchStart = 1, #FadeCache, 60 do
+                for BatchStart = 1, #FadeItems, 60 do
                     if BatchStart > 1 then
                         task.wait()
                     end
-                    for i = BatchStart, math.min(BatchStart + 59, #FadeCache) do
-                        local Data = FadeCache[i]
+                    for i = BatchStart, math.min(BatchStart + 59, #FadeItems) do
+                        local Data = FadeItems[i]
                         local ValueIndex = Data.Properties
                         local Overrides = Data.Saved
                         if type(ValueIndex) == "table" then
@@ -3232,7 +3233,6 @@ local Library do
         end
 
         local Debounce = false
-        local FadeCache = nil
         local TurnGen = 0
 
         function SubPage:Turn(Bool)
@@ -3247,20 +3247,19 @@ local Library do
                 local MyGen = TurnGen + 1
                 TurnGen = MyGen
 
-                if not FadeCache then
-                    FadeCache = {}
-                    local Descendants = Items["Subtab"].Instance:GetDescendants()
-                    TableInsert(Descendants, Items["Subtab"].Instance)
-                    for _, Value in Descendants do
-                        local ValueIndex = Library:GetTransparencyPropertyFromItem(Value)
-                        if ValueIndex then
-                            TableInsert(FadeCache, {Item = Value, Properties = ValueIndex})
-                        end
+                local Descendants = Items["Subtab"].Instance:GetDescendants()
+                TableInsert(Descendants, Items["Subtab"].Instance)
+
+                local FadeItems = {}
+                for _, Value in Descendants do
+                    local ValueIndex = Library:GetTransparencyPropertyFromItem(Value)
+                    if ValueIndex then
+                        TableInsert(FadeItems, {Item = Value, Properties = ValueIndex})
                     end
                 end
 
                 -- Pre-set all items to transparent before showing to prevent overlap flash
-                for _, Data in FadeCache do
+                for _, Data in FadeItems do
                     Data.Saved = {}
                     local ValueIndex = Data.Properties
                     if type(ValueIndex) == "table" then
@@ -3285,7 +3284,7 @@ local Library do
 
                 local Completed = 0
                 local Total = 0
-                for _, Data in FadeCache do
+                for _, Data in FadeItems do
                     Total = Total + (type(Data.Properties) == "table" and #Data.Properties or 1)
                 end
 
@@ -3298,12 +3297,12 @@ local Library do
                 end
 
                 local TweenInfoData = TweenInfo.new(SubPage.Window.FadeSpeed or 0.5, Library.Tween.Style, Library.Tween.Direction)
-                for BatchStart = 1, #FadeCache, 60 do
+                for BatchStart = 1, #FadeItems, 60 do
                     if BatchStart > 1 then
                         task.wait()
                     end
-                    for i = BatchStart, math.min(BatchStart + 59, #FadeCache) do
-                        local Data = FadeCache[i]
+                    for i = BatchStart, math.min(BatchStart + 59, #FadeItems) do
+                        local Data = FadeItems[i]
                         local ValueIndex = Data.Properties
                         local Overrides = Data.Saved
                         if type(ValueIndex) == "table" then
@@ -3646,7 +3645,6 @@ local Library do
             end
 
             local Debounce = false
-            local FadeCache = nil
             local TurnGen = 0
 
             function NewSection:Turn(Bool)
@@ -3661,20 +3659,19 @@ local Library do
                     local MyGen = TurnGen + 1
                     TurnGen = MyGen
 
-                    if not FadeCache then
-                        FadeCache = {}
-                        local Descendants = SubItems["Content"].Instance:GetDescendants()
-                        TableInsert(Descendants, SubItems["Content"].Instance)
-                        for _, Value in Descendants do
-                            local ValueIndex = Library:GetTransparencyPropertyFromItem(Value)
-                            if ValueIndex then
-                                TableInsert(FadeCache, {Item = Value, Properties = ValueIndex})
-                            end
+                    local Descendants = SubItems["Content"].Instance:GetDescendants()
+                    TableInsert(Descendants, SubItems["Content"].Instance)
+
+                    local FadeItems = {}
+                    for _, Value in Descendants do
+                        local ValueIndex = Library:GetTransparencyPropertyFromItem(Value)
+                        if ValueIndex then
+                            TableInsert(FadeItems, {Item = Value, Properties = ValueIndex})
                         end
                     end
 
                     -- Pre-set all items to transparent before showing to prevent overlap flash
-                    for _, Data in FadeCache do
+                    for _, Data in FadeItems do
                         Data.Saved = {}
                         local ValueIndex = Data.Properties
                         if type(ValueIndex) == "table" then
@@ -3696,7 +3693,7 @@ local Library do
 
                     local Completed = 0
                     local Total = 0
-                    for _, Data in FadeCache do
+                    for _, Data in FadeItems do
                         Total = Total + (type(Data.Properties) == "table" and #Data.Properties or 1)
                     end
 
@@ -3709,12 +3706,12 @@ local Library do
                     end
 
                     local TweenInfoData = TweenInfo.new(MultiSection.Window.FadeSpeed or 0.5, Library.Tween.Style, Library.Tween.Direction)
-                    for BatchStart = 1, #FadeCache, 60 do
+                    for BatchStart = 1, #FadeItems, 60 do
                         if BatchStart > 1 then
                             task.wait()
                         end
-                        for i = BatchStart, math.min(BatchStart + 59, #FadeCache) do
-                            local Data = FadeCache[i]
+                        for i = BatchStart, math.min(BatchStart + 59, #FadeItems) do
+                            local Data = FadeItems[i]
                             local ValueIndex = Data.Properties
                             local Overrides = Data.Saved
                             if type(ValueIndex) == "table" then
@@ -4866,11 +4863,13 @@ local Library do
                     end
                 end
             else
-                Debounce = false
                 Items["Open"].Instance.Text = "+"
                 Items["Open"].Instance.Position = UDim2New(0, -4, 0, -1)
                 Items["OptionHolder"].Instance.Visible = false
                 Items["OptionHolder"].Instance.ZIndex = 1
+                task.defer(function()
+                    Debounce = false
+                end)
             end
         end
 
