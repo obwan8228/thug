@@ -214,7 +214,7 @@ local Library do
         Tween = {
             Time = 0.3,
             Style = Enum.EasingStyle.Exponential,
-            Direction = Enum.EasingDirection.Out
+            Direction = Enum.EasingDirection.InOut
         },
 
         Folders = {
@@ -2007,7 +2007,7 @@ local Library do
                     return
                 end
 
-                if Library:IsMouseOverFrame(Items["ColorpickerWindow"]) then
+                if Library:IsMouseOverFrame(Items["ColorpickerWindow"]) or Library:IsMouseOverFrame(Items["ColorpickerButton"]) then
                     return
                 end
 
@@ -2458,7 +2458,7 @@ local Library do
             SubPages = { },
             Elements = { },
 
-            IsOpen = true
+            IsOpen = false
         }
 
         local Items = { } do 
@@ -2470,7 +2470,8 @@ local Library do
                 BorderColor3 = FromRGB(10, 10, 10),
                 Size = Window.Size,
                 BorderSizePixel = 2,
-                BackgroundColor3 = FromRGB(15, 15, 20)
+                BackgroundColor3 = FromRGB(15, 15, 20),
+                Visible = false
             })  Items["MainFrame"]:AddToTheme({BackgroundColor3 = "Background", BorderColor3 = "Border"})
 
             Items["MainFrame"].Instance.Position = UDim2New(0, Camera.ViewportSize.X / (IsMobile and 1.4 or 2) - Window.Size.X.Offset / 2, 0, Camera.ViewportSize.Y / (IsMobile and 1.4 or 2) - Window.Size.Y.Offset / 2 - 50)
@@ -3057,8 +3058,11 @@ local Library do
 
         Items["Inactive"]:Connect("MouseButton1Down", function()
             for Index, Value in Page.Window.Pages do
-                Value:Turn(Value == Page)
+                if Value ~= Page then
+                    Value:Turn(false)
+                end
             end
+            Page:Turn(true)
         end)
 
         if #Page.Window.Pages == 0 then 
@@ -3334,8 +3338,11 @@ local Library do
 
         Items["Inactive"]:Connect("MouseButton1Down", function()
             for Index, Value in SubPage.Window.SubPages do
-                Value:Turn(Value == SubPage)
+                if Value ~= SubPage then
+                    Value:Turn(false)
+                end
             end
+            SubPage:Turn(true)
         end)
 
         if #SubPage.Window.SubPages == 0 then 
@@ -3741,8 +3748,11 @@ local Library do
 
             SubItems["Inactive"]:Connect("MouseButton1Down", function()
                 for Index, Value in MultiSection.SectionContents do
-                    Value:Turn(Value == NewSection)
+                    if Value ~= NewSection then
+                        Value:Turn(false)
+                    end
                 end
+                NewSection:Turn(true)
             end)
 
             if #MultiSection.SectionContents == 0 then 
@@ -4867,9 +4877,7 @@ local Library do
                 Items["Open"].Instance.Position = UDim2New(0, -4, 0, -1)
                 Items["OptionHolder"].Instance.Visible = false
                 Items["OptionHolder"].Instance.ZIndex = 1
-                task.defer(function()
-                    Debounce = false
-                end)
+                Debounce = false
             end
         end
 
@@ -4887,7 +4895,7 @@ local Library do
                     return 
                 end
 
-                if Library:IsMouseOverFrame(Items["OptionHolder"]) then
+                if Library:IsMouseOverFrame(Items["OptionHolder"]) or Library:IsMouseOverFrame(Items["Open"]) then
                     return
                 end
 
@@ -5547,6 +5555,5 @@ local Library do
         end
     end
 end
-
 getgenv().Library = Library
 return Library
