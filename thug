@@ -835,6 +835,13 @@ local Library do
             [Property] = Visibility and OldTransparency or 1
         }, true)
 
+        Library:Connect(NewTween.Tween.Completed, function()
+            if not Visibility then 
+                task.wait()
+                Item[Property] = OldTransparency
+            end
+        end)
+
         return NewTween
     end
 
@@ -1709,77 +1716,60 @@ local Library do
         local SlidingAlpha = false
 
         local Debounce = false
-        local FadeCache = nil
-        local OpenGen = 0
 
         function Colorpicker:SetOpen(Bool)
+            if Debounce then 
+                return 
+            end
+
             Colorpicker.IsOpen = Bool
 
+            Debounce = true 
+
             if Bool then 
-                if Debounce then return end
-                Debounce = true
-                local MyGen = OpenGen + 1
-                OpenGen = MyGen
                 Items["ColorpickerWindow"].Instance.Visible = true
                 Items["ColorpickerWindow"].Instance.Position = UDim2New(0, Data.Parent.Instance.AbsolutePosition.X, 0, Data.Parent.Instance.AbsolutePosition.Y + 15)
 
-                if Library.CurrentColorpicker and Library.CurrentColorpicker ~= Colorpicker then
+                if Library.CurrentColorpicker then
                     Library.CurrentColorpicker:SetOpen(false)
+                    Library.CurrentColorpicker = nil 
                 end
 
-                Library.CurrentColorpicker = Colorpicker
-
-                if not FadeCache then
-                    FadeCache = {}
-                    local Descendants = Items["ColorpickerWindow"].Instance:GetDescendants()
-                    TableInsert(Descendants, Items["ColorpickerWindow"].Instance)
-                    for _, Value in Descendants do
-                        local ValueIndex = Library:GetTransparencyPropertyFromItem(Value)
-                        if ValueIndex then
-                            TableInsert(FadeCache, {Item = Value, Properties = ValueIndex})
-                        end
-                    end
-                end
-
-                local Completed = 0
-                local Total = 0
-                for _, FData in FadeCache do
-                    Total = Total + (type(FData.Properties) == "table" and #FData.Properties or 1)
-                end
-
-                local function OnComplete()
-                    if MyGen ~= OpenGen then return end
-                    Completed = Completed + 1
-                    if Completed >= Total then
-                        Debounce = false
-                    end
-                end
-
-                for _, FData in FadeCache do
-                    if not StringFind(FData.Item.ClassName, "UI") then
-                        FData.Item.ZIndex = 10001
-                    end
-                    local ValueIndex = FData.Properties
-                    if type(ValueIndex) == "table" then
-                        for _, Property in ValueIndex do
-                            local Twn = Library:FadeItem(FData.Item, Property, true, Data.FadeSpeed)
-                            if Twn and Twn.Tween then
-                                Twn.Tween.Completed:Once(OnComplete)
-                            end
-                        end
-                    else
-                        local Twn = Library:FadeItem(FData.Item, ValueIndex, true, Data.FadeSpeed)
-                        if Twn and Twn.Tween then
-                            Twn.Tween.Completed:Once(OnComplete)
-                        end
-                    end
+                if not Library.CurrentColorpicker then 
+                    Library.CurrentColorpicker = Colorpicker
                 end
             else
-                OpenGen = OpenGen + 1
-                Debounce = false
                 Library.CurrentColorpicker = nil
-                Items["ColorpickerWindow"].Instance.Visible = false
             end
+
+            local Descendants = Items["ColorpickerWindow"].Instance:GetDescendants()
+            TableInsert(Descendants, Items["ColorpickerWindow"].Instance)
+
+            local NewTween
+            for Index, Value in Descendants do 
+                local ValueIndex = Library:GetTransparencyPropertyFromItem(Value)
+
+                if not ValueIndex then 
+                    continue
+                end
+
+                if not StringFind(Value.ClassName, "UI") then 
+                    Value.ZIndex = Bool and 10001 or 1
+                end
+
+                if type(ValueIndex) == "table" then
+                    for _, Property in ValueIndex do 
+                        NewTween = Library:FadeItem(Value, Property, Bool, Data.FadeSpeed)
+                    end
+                else
+                    NewTween = Library:FadeItem(Value, ValueIndex, Bool, Data.FadeSpeed)
+                end
+            end
+
+            Library:Connect(NewTween.Tween.Completed, function()
+                Debounce = false
+                Items["ColorpickerWindow"].Instance.Visible = Bool
+            end)
         end
 
         function Colorpicker:Get()
@@ -2635,75 +2625,44 @@ local Library do
         end
 
         local Debounce = false
-        local FadeCache = nil
-        local OpenGen = 0
 
         function Window:SetOpen(Bool)
-            if Bool and Debounce then 
+            if Debounce then 
                 return 
             end
 
             Window.IsOpen = Bool
 
+            Debounce = true 
+
             if Bool then 
-                Debounce = true
-                local MyGen = OpenGen + 1
-                OpenGen = MyGen
                 Items["MainFrame"].Instance.Visible = true
-
-                if not FadeCache then
-                    FadeCache = {}
-                    local Descendants = Items["MainFrame"].Instance:GetDescendants()
-                    TableInsert(Descendants, Items["MainFrame"].Instance)
-                    for _, Value in Descendants do
-                        local ValueIndex = Library:GetTransparencyPropertyFromItem(Value)
-                        if ValueIndex then
-                            TableInsert(FadeCache, {Item = Value, Properties = ValueIndex})
-                        end
-                    end
-                end
-
-                local Completed = 0
-                local Total = 0
-                for _, Data in FadeCache do
-                    Total = Total + (type(Data.Properties) == "table" and #Data.Properties or 1)
-                end
-
-                local function OnComplete()
-                    if MyGen ~= OpenGen then return end
-                    Completed = Completed + 1
-                    if Completed >= Total then
-                        Debounce = false
-                    end
-                end
-
-                for BatchStart = 1, #FadeCache, 60 do
-                    if BatchStart > 1 then
-                        task.wait()
-                    end
-                    for i = BatchStart, math.min(BatchStart + 59, #FadeCache) do
-                        local Data = FadeCache[i]
-                        local ValueIndex = Data.Properties
-                        if type(ValueIndex) == "table" then
-                            for _, Property in ValueIndex do
-                                local Twn = Library:FadeItem(Data.Item, Property, true, Window.FadeSpeed)
-                                if Twn and Twn.Tween then
-                                    Twn.Tween.Completed:Once(OnComplete)
-                                end
-                            end
-                        else
-                            local Twn = Library:FadeItem(Data.Item, ValueIndex, true, Window.FadeSpeed)
-                            if Twn and Twn.Tween then
-                                Twn.Tween.Completed:Once(OnComplete)
-                            end
-                        end
-                    end
-                end
-            else
-                OpenGen = OpenGen + 1
-                Items["MainFrame"].Instance.Visible = false
-                Debounce = false
             end
+
+            local Descendants = Items["MainFrame"].Instance:GetDescendants()
+            TableInsert(Descendants, Items["MainFrame"].Instance)
+
+            local NewTween
+            for Index, Value in Descendants do 
+                local ValueIndex = Library:GetTransparencyPropertyFromItem(Value)
+
+                if not ValueIndex then 
+                    continue
+                end
+
+                if type(ValueIndex) == "table" then
+                    for _, Property in ValueIndex do 
+                        NewTween = Library:FadeItem(Value, Property, Bool, Window.FadeSpeed)
+                    end
+                else
+                    NewTween = Library:FadeItem(Value, ValueIndex, Bool, Window.FadeSpeed)
+                end
+            end
+
+            Library:Connect(NewTween.Tween.Completed, function()
+                Debounce = false
+                Items["MainFrame"].Instance.Visible = Bool
+            end)
 
             if IsMobile and Items["FloatingButton"] then
                 local FloatingLabel = Items["FloatingButton"].Instance:FindFirstChildOfClass("TextLabel")
@@ -2921,84 +2880,57 @@ local Library do
         end
 
         local Debounce = false
-        local FadeCache = nil
-        local TurnGen = 0
 
         function Page:Turn(Bool)
-            if Bool and Debounce then 
+            if Debounce then 
                 return 
             end
 
             Page.Active = Bool
 
+            Debounce = true 
+
             if Bool then 
-                Debounce = true
-                local MyGen = TurnGen + 1
-                TurnGen = MyGen
                 Items["Page"].Instance.Visible = true
 
                 Items["Text"]:Tween(nil, {TextColor3 = Library.Theme.Accent, TextTransparency = 0})
                 Items["Hide"].Instance.Visible = true
 
                 Items["Text"]:ChangeItemTheme({TextColor3 = "Accent"})
-
-                if not FadeCache then
-                    FadeCache = {}
-                    local Descendants = Items["Page"].Instance:GetDescendants()
-                    TableInsert(Descendants, Items["Page"].Instance)
-                    for _, Value in Descendants do
-                        local ValueIndex = Library:GetTransparencyPropertyFromItem(Value)
-                        if ValueIndex then
-                            TableInsert(FadeCache, {Item = Value, Properties = ValueIndex})
-                        end
-                    end
-                end
-
-                local Completed = 0
-                local Total = 0
-                for _, Data in FadeCache do
-                    Total = Total + (type(Data.Properties) == "table" and #Data.Properties or 1)
-                end
-
-                local function OnComplete()
-                    if MyGen ~= TurnGen then return end
-                    Completed = Completed + 1
-                    if Completed >= Total then
-                        Debounce = false
-                    end
-                end
-
-                for BatchStart = 1, #FadeCache, 60 do
-                    if BatchStart > 1 then
-                        task.wait()
-                    end
-                    for i = BatchStart, math.min(BatchStart + 59, #FadeCache) do
-                        local Data = FadeCache[i]
-                        local ValueIndex = Data.Properties
-                        if type(ValueIndex) == "table" then
-                            for _, Property in ValueIndex do
-                                local Twn = Library:FadeItem(Data.Item, Property, true, Page.Window.FadeSpeed or 0.5)
-                                if Twn and Twn.Tween then
-                                    Twn.Tween.Completed:Once(OnComplete)
-                                end
-                            end
-                        else
-                            local Twn = Library:FadeItem(Data.Item, ValueIndex, true, Page.Window.FadeSpeed or 0.5)
-                            if Twn and Twn.Tween then
-                                Twn.Tween.Completed:Once(OnComplete)
-                            end
-                        end
-                    end
-                end
             else
-                TurnGen = TurnGen + 1
                 Items["Text"]:Tween(nil, {TextColor3 = Library.Theme.Text, TextTransparency = 0.5})
                 Items["Hide"].Instance.Visible = false
 
                 Items["Text"]:ChangeItemTheme({TextColor3 = "Text"})
                 Items["Page"].Instance.Visible = false
                 Debounce = false
+                return
             end
+
+            local Descendants = Items["Page"].Instance:GetDescendants()
+            TableInsert(Descendants, Items["Page"].Instance)
+
+            local NewTween
+            for Index, Value in Descendants do 
+                local ValueIndex = Library:GetTransparencyPropertyFromItem(Value)
+
+                if not ValueIndex then 
+                    continue
+                end
+
+                if type(ValueIndex) == "table" then
+                    for _, Property in ValueIndex do 
+                        NewTween = Library:FadeItem(Value, Property, Bool, Page.Window.FadeSpeed or 0.5)
+                    end
+                else
+                    NewTween = Library:FadeItem(Value, ValueIndex, Bool, Page.Window.FadeSpeed or 0.5)
+                end
+            end
+
+            Library:Connect(NewTween.Tween.Completed, function()
+                Debounce = false
+                Items["Page"].Instance.Visible = Bool
+            end)
         end
 
         Items["Inactive"]:Connect("MouseButton1Down", function()
@@ -3179,20 +3111,17 @@ local Library do
         end
 
         local Debounce = false
-        local FadeCache = nil
-        local TurnGen = 0
 
         function SubPage:Turn(Bool)
-            if Bool and Debounce then 
+            if Debounce then 
                 return 
             end
 
             SubPage.Active = Bool
 
+            Debounce = true 
+
             if Bool then 
-                Debounce = true
-                local MyGen = TurnGen + 1
-                TurnGen = MyGen
                 Items["Subtab"].Instance.Visible = true
 
                 Items["Icon"]:Tween(nil, {ImageColor3 = Library.Theme.Accent, ImageTransparency = 0})
@@ -3201,57 +3130,7 @@ local Library do
                 Items["Icon"]:ChangeItemTheme({ImageColor3 = "Accent"})
 
                 Items["Inactive"].Instance.Size = UDim2New(1, 0, 1, 1)
-
-                if not FadeCache then
-                    FadeCache = {}
-                    local Descendants = Items["Subtab"].Instance:GetDescendants()
-                    TableInsert(Descendants, Items["Subtab"].Instance)
-                    for _, Value in Descendants do
-                        local ValueIndex = Library:GetTransparencyPropertyFromItem(Value)
-                        if ValueIndex then
-                            TableInsert(FadeCache, {Item = Value, Properties = ValueIndex})
-                        end
-                    end
-                end
-
-                local Completed = 0
-                local Total = 0
-                for _, Data in FadeCache do
-                    Total = Total + (type(Data.Properties) == "table" and #Data.Properties or 1)
-                end
-
-                local function OnComplete()
-                    if MyGen ~= TurnGen then return end
-                    Completed = Completed + 1
-                    if Completed >= Total then
-                        Debounce = false
-                    end
-                end
-
-                for BatchStart = 1, #FadeCache, 60 do
-                    if BatchStart > 1 then
-                        task.wait()
-                    end
-                    for i = BatchStart, math.min(BatchStart + 59, #FadeCache) do
-                        local Data = FadeCache[i]
-                        local ValueIndex = Data.Properties
-                        if type(ValueIndex) == "table" then
-                            for _, Property in ValueIndex do
-                                local Twn = Library:FadeItem(Data.Item, Property, true, SubPage.Window.FadeSpeed or 0.5)
-                                if Twn and Twn.Tween then
-                                    Twn.Tween.Completed:Once(OnComplete)
-                                end
-                            end
-                        else
-                            local Twn = Library:FadeItem(Data.Item, ValueIndex, true, SubPage.Window.FadeSpeed or 0.5)
-                            if Twn and Twn.Tween then
-                                Twn.Tween.Completed:Once(OnComplete)
-                            end
-                        end
-                    end
-                end
             else
-                TurnGen = TurnGen + 1
                 Items["Icon"]:Tween(nil, {ImageColor3 = Library.Theme.Text, ImageTransparency = 0.35})
                 Items["Hide"].Instance.Visible = false
 
@@ -3259,7 +3138,33 @@ local Library do
                 Items["Inactive"].Instance.Size = UDim2New(1, 0, 1, -2)
                 Items["Subtab"].Instance.Visible = false
                 Debounce = false
+                return
             end
+
+            local Descendants = Items["Subtab"].Instance:GetDescendants()
+            TableInsert(Descendants, Items["Subtab"].Instance)
+
+            local NewTween
+            for Index, Value in Descendants do 
+                local ValueIndex = Library:GetTransparencyPropertyFromItem(Value)
+
+                if not ValueIndex then 
+                    continue
+                end
+
+                if type(ValueIndex) == "table" then
+                    for _, Property in ValueIndex do 
+                        NewTween = Library:FadeItem(Value, Property, Bool, SubPage.Window.FadeSpeed or 0.5)
+                    end
+                else
+                    NewTween = Library:FadeItem(Value, ValueIndex, Bool, SubPage.Window.FadeSpeed or 0.5)
+                end
+            end
+
+            Library:Connect(NewTween.Tween.Completed, function()
+                Debounce = false
+                Items["Subtab"].Instance.Visible = Bool
+            end)
         end
 
         Items["Inactive"]:Connect("MouseButton1Down", function()
@@ -3575,82 +3480,55 @@ local Library do
             end
 
             local Debounce = false
-            local FadeCache = nil
-            local TurnGen = 0
 
             function NewSection:Turn(Bool)
-                if Bool and Debounce then 
+                if Debounce then 
                     return 
                 end
 
                 NewSection.Active = Bool
 
+                Debounce = true 
+
                 if Bool then 
-                    Debounce = true
-                    local MyGen = TurnGen + 1
-                    TurnGen = MyGen
                     SubItems["Content"].Instance.Visible = true
 
                     SubItems["Text"]:Tween(nil, {TextColor3 = Library.Theme.Accent, TextTransparency = 0})
 
                     SubItems["Text"]:ChangeItemTheme({TextColor3 = "Accent"})
-
-                    if not FadeCache then
-                        FadeCache = {}
-                        local Descendants = SubItems["Content"].Instance:GetDescendants()
-                        TableInsert(Descendants, SubItems["Content"].Instance)
-                        for _, Value in Descendants do
-                            local ValueIndex = Library:GetTransparencyPropertyFromItem(Value)
-                            if ValueIndex then
-                                TableInsert(FadeCache, {Item = Value, Properties = ValueIndex})
-                            end
-                        end
-                    end
-
-                    local Completed = 0
-                    local Total = 0
-                    for _, Data in FadeCache do
-                        Total = Total + (type(Data.Properties) == "table" and #Data.Properties or 1)
-                    end
-
-                    local function OnComplete()
-                        if MyGen ~= TurnGen then return end
-                        Completed = Completed + 1
-                        if Completed >= Total then
-                            Debounce = false
-                        end
-                    end
-
-                    for BatchStart = 1, #FadeCache, 60 do
-                        if BatchStart > 1 then
-                            task.wait()
-                        end
-                        for i = BatchStart, math.min(BatchStart + 59, #FadeCache) do
-                            local Data = FadeCache[i]
-                            local ValueIndex = Data.Properties
-                            if type(ValueIndex) == "table" then
-                                for _, Property in ValueIndex do
-                                    local Twn = Library:FadeItem(Data.Item, Property, true, MultiSection.Window.FadeSpeed or 0.5)
-                                    if Twn and Twn.Tween then
-                                        Twn.Tween.Completed:Once(OnComplete)
-                                    end
-                                end
-                            else
-                                local Twn = Library:FadeItem(Data.Item, ValueIndex, true, MultiSection.Window.FadeSpeed or 0.5)
-                                if Twn and Twn.Tween then
-                                    Twn.Tween.Completed:Once(OnComplete)
-                                end
-                            end
-                        end
-                    end
                 else
-                    TurnGen = TurnGen + 1
                     SubItems["Text"]:Tween(nil, {TextColor3 = Library.Theme.Text, TextTransparency = 0.5})
 
                     SubItems["Text"]:ChangeItemTheme({TextColor3 = "Text"})
-                    SubItems["Content"].Instance.Visible = false
-                    Debounce = false
+                SubItems["Content"].Instance.Visible = false
+                Debounce = false
+                return
+            end
+
+            local Descendants = SubItems["Content"].Instance:GetDescendants()
+                TableInsert(Descendants, SubItems["Content"].Instance)
+
+                local NewTween
+                for Index, Value in Descendants do 
+                    local ValueIndex = Library:GetTransparencyPropertyFromItem(Value)
+
+                    if not ValueIndex then 
+                        continue
+                    end
+
+                    if type(ValueIndex) == "table" then
+                        for _, Property in ValueIndex do 
+                            NewTween = Library:FadeItem(Value, Property, Bool, MultiSection.Window.FadeSpeed or 0.5)
+                        end
+                    else
+                        NewTween = Library:FadeItem(Value, ValueIndex, Bool, MultiSection.Window.FadeSpeed or 0.5)
+                    end
                 end
+
+                Library:Connect(NewTween.Tween.Completed, function()
+                    Debounce = false
+                    SubItems["Content"].Instance.Visible = Bool
+                end)
             end
 
             SubItems["Inactive"]:Connect("MouseButton1Down", function()
@@ -4710,60 +4588,53 @@ local Library do
         local Debounce = false
 
         function Dropdown:SetOpen(Bool)
+            if Debounce then 
+                return 
+            end
+
             Dropdown.IsOpen = Bool
 
+            Debounce = true 
+
             if Bool then 
-                if Debounce then return end
-                Debounce = true
                 Items["OptionHolder"].Instance.Visible = true
                 Items["OptionHolder"].Instance.ZIndex = 15
                 Items["Open"].Instance.Text = "-"
                 Items["Open"].Instance.Position = UDim2New(0, -5, 0, -1)
-
-                local Descendants = Items["OptionHolder"].Instance:GetDescendants()
-                TableInsert(Descendants, Items["OptionHolder"].Instance)
-
-                local Completed = 0
-                local Total = 0
-                for _, Value in Descendants do
-                    local ValueIndex = Library:GetTransparencyPropertyFromItem(Value)
-                    if ValueIndex then
-                        Total = Total + (type(ValueIndex) == "table" and #ValueIndex or 1)
-                    end
-                end
-
-                local function OnComplete()
-                    Completed = Completed + 1
-                    if Completed >= Total then
-                        Debounce = false
-                    end
-                end
-
-                for _, Value in Descendants do
-                    local ValueIndex = Library:GetTransparencyPropertyFromItem(Value)
-                    if not ValueIndex then continue end
-
-                    if not StringFind(Value.ClassName, "UI") then
-                        Value.ZIndex = 15
-                    end
-
-                    if type(ValueIndex) == "table" then
-                        for _, Property in ValueIndex do
-                            local Twn = Library:FadeItem(Value, Property, true, Dropdown.Window.FadeSpeed)
-                            if Twn and Twn.Tween then Twn.Tween.Completed:Once(OnComplete) end
-                        end
-                    else
-                        local Twn = Library:FadeItem(Value, ValueIndex, true, Dropdown.Window.FadeSpeed)
-                        if Twn and Twn.Tween then Twn.Tween.Completed:Once(OnComplete) end
-                    end
-                end
             else
-                Debounce = false
                 Items["Open"].Instance.Text = "+"
                 Items["Open"].Instance.Position = UDim2New(0, -4, 0, -1)
-                Items["OptionHolder"].Instance.Visible = false
-                Items["OptionHolder"].Instance.ZIndex = 1
             end
+
+            local Descendants = Items["OptionHolder"].Instance:GetDescendants()
+            TableInsert(Descendants, Items["OptionHolder"].Instance)
+
+            local NewTween
+            for Index, Value in Descendants do 
+                local ValueIndex = Library:GetTransparencyPropertyFromItem(Value)
+
+                if not ValueIndex then 
+                    continue
+                end
+
+                if not StringFind(Value.ClassName, "UI") then 
+                    Value.ZIndex = Bool and 15 or 1
+                end
+
+                if type(ValueIndex) == "table" then
+                    for _, Property in ValueIndex do 
+                        NewTween = Library:FadeItem(Value, Property, Bool, Dropdown.Window.FadeSpeed)
+                    end
+                else
+                    NewTween = Library:FadeItem(Value, ValueIndex, Bool, Dropdown.Window.FadeSpeed)
+                end
+            end
+
+            Library:Connect(NewTween.Tween.Completed, function()
+                Debounce = false
+                Items["OptionHolder"].Instance.Visible = Bool
+                Items["OptionHolder"].Instance.ZIndex = Bool and 15 or 1
+            end)
         end
 
         for Index, Value in Dropdown.Items do 
